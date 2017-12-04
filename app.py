@@ -1,14 +1,14 @@
 import sys
-import os.path
 import re
 import discord
 import requests
 import asyncio
 
+
 CLIENT = discord.Client()
-NEWS_CHANNEL = []
-VERSION_FILE = 'latest_version.txt'
+NEWS_CHANNELS = []
 TOKEN = None
+
 
 try:
     from Credentials import TOKEN
@@ -19,28 +19,34 @@ except ModuleNotFoundError:
         raise Exception('Specify discord token either with a credentials.py file or as an argument.')
 
 
-def _update_version_file(new_contents):
-    with open(VERSION_FILE, 'w') as ver_file:
-        ver_file.write(new_contents)
+def _purge_check(message):
+    if message.author.id != CLIENT.user.id:
+        return True
+    return False
+
+
+async def _find_log_message(channel, starting_string):
+    async for message in CLIENT.logs_from(channel, limit=20):
+        if message.author.id == CLIENT.user.id and message.content.startswith(starting_string):
+            return True
 
 async def my_background_task():
-    await asyncio.sleep(20)
+    await asyncio.sleep(10)
     await CLIENT.wait_until_login()
     while not CLIENT.is_closed:
         request = requests.get('https://playoverwatch.com/en-us/game/patch-notes/pc/')
         match = re.search('<a href="#([a-zA-Z\-0-9]*)"><h3 class="blog-sidebar-article-title">([a-zA-Z 0-9\.]*)</h3>', request.text)
-        loc_version = ''
-        if os.path.isfile(VERSION_FILE):
-            with open(VERSION_FILE, 'r') as ver_file:
-                loc_version = ver_file.read()
-        if not loc_version or loc_version != match.group(2):
-            _update_version_file(match.group(2))
-            message = match.group(2) + ' now out! read the patch notes here:\nhttps://playoverwatch.com/en-us/game/patch-notes/pc/#' + match.group(1)
-            print(message)
-            if NEWS_CHANNEL:
-                await CLIENT.send_message(NEWS_CHANNEL[0], message)
+        if match:
+            channels_told = 0
+            for channel in NEWS_CHANNELS:
+                update_in_logs = await _find_log_message(channel, match.group(2))
+                if not update_in_logs:
+                    message = match.group(2) + ' now out! read the patch notes here:\nhttps://playoverwatch.com/en-us/game/patch-notes/pc/#' + match.group(1)
+                    channels_told += 1
+                    await CLIENT.send_message(channel, message)
+            print('Told ' + str(channels_told) + ' channels.')
         else:
-            print('No new version.')
+            print('Could not find update notes in HTML.')
         await asyncio.sleep(60)
 
 
@@ -53,7 +59,8 @@ async def on_ready():
     for server in CLIENT.servers:
         for channel in server.channels:
             if str(channel) == 'overwatch-news':
-                NEWS_CHANNEL.append(channel)
+                NEWS_CHANNELS.append(channel)
+
 
 CLIENT.loop.create_task(my_background_task())
 CLIENT.run(TOKEN)
