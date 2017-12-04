@@ -39,6 +39,8 @@ async def my_background_task():
             print(message)
             if NEWS_CHANNEL:
                 await CLIENT.send_message(NEWS_CHANNEL[0], message)
+        else:
+            print('No new version.')
         await asyncio.sleep(60)
 
 
