@@ -33,7 +33,7 @@ def _find_channels_to_tell(server_list):
                 channel_list.append(channel)
     return channel_list
 
-async def my_background_task():
+async def overwatch_news_timer():
     await asyncio.sleep(10)
     await CLIENT.wait_until_login()
     while not CLIENT.is_closed:
@@ -66,5 +66,5 @@ async def on_ready():
     print('------')
 
 
-CLIENT.loop.create_task(my_background_task())
+CLIENT.loop.create_task(overwatch_news_timer())
 CLIENT.run(TOKEN)
