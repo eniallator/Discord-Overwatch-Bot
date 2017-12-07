@@ -1,4 +1,5 @@
 import sys
+import os
 import re
 import discord
 import requests
@@ -7,16 +8,17 @@ import asyncio
 
 CLIENT = discord.Client()
 NEWS_CHANNELS = []
-TOKEN = None
+TOKEN = os.environ.get('DISCORD_TOKEN')
 
 
-try:
-    from Credentials import TOKEN
-except ModuleNotFoundError:
-    if len(sys.argv) > 1:
-        TOKEN = sys.argv[1]
-    else:
-        raise Exception('Specify discord token either with a credentials.py file or as an argument.')
+if not TOKEN:
+    try:
+        from Credentials import TOKEN
+    except ModuleNotFoundError:
+        if len(sys.argv) > 1:
+            TOKEN = sys.argv[1]
+        else:
+            raise Exception('Specify discord token either with a credentials.py file or as an argument.')
 
 
 def _purge_check(message):
