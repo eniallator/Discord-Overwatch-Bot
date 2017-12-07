@@ -7,7 +7,6 @@ import asyncio
 
 
 CLIENT = discord.Client()
-NEWS_CHANNELS = []
 TOKEN = os.environ.get('DISCORD_TOKEN')
 
 
@@ -21,16 +20,18 @@ if not TOKEN:
             raise Exception('Specify discord token either with a credentials.py file or as an argument.')
 
 
-def _purge_check(message):
-    if message.author.id != CLIENT.user.id:
-        return True
-    return False
-
-
 async def _find_log_message(channel, starting_string):
     async for message in CLIENT.logs_from(channel, limit=20):
         if message.author.id == CLIENT.user.id and message.content.startswith(starting_string):
             return True
+
+def _find_channels_to_tell(server_list):
+    channel_list = []
+    for server in server_list:
+        for channel in server.channels:
+            if str(channel) == 'overwatch-news':
+                channel_list.append(channel)
+    return channel_list
 
 async def my_background_task():
     await asyncio.sleep(10)
@@ -39,14 +40,19 @@ async def my_background_task():
         request = requests.get('https://playoverwatch.com/en-us/game/patch-notes/pc/')
         match = re.search('<a href="#([a-zA-Z\-0-9]*)"><h3 class="blog-sidebar-article-title">([a-zA-Z 0-9\.]*)</h3>', request.text)
         if match:
-            channels_told = 0
-            for channel in NEWS_CHANNELS:
+            channel_list = _find_channels_to_tell(CLIENT.servers)
+            channels_told = []
+            for channel in channel_list:
                 update_in_logs = await _find_log_message(channel, match.group(2))
                 if not update_in_logs:
                     message = match.group(2) + ' now out! read the patch notes here:\nhttps://playoverwatch.com/en-us/game/patch-notes/pc/#' + match.group(1)
-                    channels_told += 1
+                    channels_told.append(str(channel.server))
                     await CLIENT.send_message(channel, message)
-            print('Told ' + str(channels_told) + ' channels.')
+            
+            if channels_told:
+                print('Told the following servers: ' + ', '.join(channels_told))
+            else:
+                print('Told no servers.')
         else:
             print('Could not find update notes in HTML.')
         await asyncio.sleep(60)
@@ -58,10 +64,6 @@ async def on_ready():
     print(CLIENT.user.name)
     print(CLIENT.user.id)
     print('------')
-    for server in CLIENT.servers:
-        for channel in server.channels:
-            if str(channel) == 'overwatch-news':
-                NEWS_CHANNELS.append(channel)
 
 
 CLIENT.loop.create_task(my_background_task())
