@@ -21,7 +21,7 @@ if not TOKEN:
 
 
 async def _find_log_message(channel, starting_string):
-    async for message in CLIENT.logs_from(channel, limit=20):
+    async for message in CLIENT.logs_from(channel):
         if message.author.id == CLIENT.user.id and message.content.startswith(starting_string):
             return True
 
@@ -38,7 +38,7 @@ async def overwatch_news_timer():
     await CLIENT.wait_until_login()
     while not CLIENT.is_closed:
         request = requests.get('https://playoverwatch.com/en-us/game/patch-notes/pc/')
-        match = re.search('<a href="#([a-zA-Z\-0-9]*)"><h3 class="blog-sidebar-article-title">([a-zA-Z 0-9\.]*)</h3>', request.text)
+        match = re.search(r'<a\s*href="#([a-zA-Z\-0-9]*)"><h3\s*class="blog-sidebar-article-title">([a-zA-Z 0-9\.]*)</h3>', request.text)
         if match:
             channel_list = _find_channels_to_tell(CLIENT.servers)
             channels_told = []
