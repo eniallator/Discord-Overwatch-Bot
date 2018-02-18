@@ -20,9 +20,9 @@ if not TOKEN:
             raise Exception('Specify discord token either with a credentials.py file or as an argument.')
 
 
-async def _find_log_message(channel, starting_string):
-    async for message in CLIENT.logs_from(channel):
-        if message.author.id == CLIENT.user.id and message.content.startswith(starting_string):
+async def _find_log_message(channel, update_id):
+    async for message in CLIENT.logs_from(channel, limit=100):
+        if message.author.id == CLIENT.user.id and message.content.endswith(update_id):
             return True
 
 def _find_channels_to_tell(server_list):
@@ -43,7 +43,7 @@ async def overwatch_news_timer():
             channel_list = _find_channels_to_tell(CLIENT.servers)
             channels_told = []
             for channel in channel_list:
-                update_in_logs = await _find_log_message(channel, match.group(2))
+                update_in_logs = await _find_log_message(channel, match.group(1))
                 if not update_in_logs:
                     message = match.group(2) + ' now out! read the patch notes here:\nhttps://playoverwatch.com/en-us/game/patch-notes/pc/#' + match.group(1)
                     channels_told.append(str(channel.server))
