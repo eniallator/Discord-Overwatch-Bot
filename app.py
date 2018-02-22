@@ -34,8 +34,7 @@ def _find_channels_to_tell(server_list):
     return channel_list
 
 async def overwatch_news_timer():
-    await asyncio.sleep(10)
-    await CLIENT.wait_until_login()
+    await CLIENT.wait_until_ready()
     while not CLIENT.is_closed:
         request = requests.get('https://playoverwatch.com/en-us/game/patch-notes/pc/')
         match = re.search(r'<a\s*href="#([a-zA-Z\-0-9]*)"><h3\s*class="blog-sidebar-article-title">([a-zA-Z 0-9\.]*)</h3>', request.text)
