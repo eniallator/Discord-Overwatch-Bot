@@ -33,21 +33,33 @@ def _find_channels_to_tell(server_list):
                 channel_list.append(channel)
     return channel_list
 
+def get_overwatch_role_id(server):
+    return next((role.id for role in server.roles if str(role).lower() == 'overwatch'), 'NO_OVERWATCH_ROLE_DETECTED')
+
+
+OVERWATCH_URL = 'https://playoverwatch.com/en-us/game/patch-notes/pc/'
+
 async def overwatch_news_timer():
     await CLIENT.wait_until_ready()
     while not CLIENT.is_closed:
-        request = requests.get('https://playoverwatch.com/en-us/game/patch-notes/pc/')
+        request = requests.get(OVERWATCH_URL)
         match = re.search(r'<a\s*href="#([a-zA-Z\-0-9]*)"><h3\s*class="blog-sidebar-article-title">([a-zA-Z 0-9\.]*)</h3>', request.text)
         if match:
             channel_list = _find_channels_to_tell(CLIENT.servers)
             channels_told = []
             for channel in channel_list:
                 update_in_logs = await _find_log_message(channel, match.group(1))
+
+                mention_group = '@everyone'
+                if not 'overwatch' in str(channel.server).lower():
+                    overwatch_role_id = get_overwatch_role_id(channel.server)
+                    mention_group = '<@&' + overwatch_role_id + '>'
+
                 if not update_in_logs:
-                    message = match.group(2) + ' now out! read the patch notes here:\nhttps://playoverwatch.com/en-us/game/patch-notes/pc/#' + match.group(1)
+                    message = mention_group + ' ' + match.group(2) + ' now out! read the patch notes here:\n' + OVERWATCH_URL + '#' + match.group(1)
                     channels_told.append(str(channel.server))
                     await CLIENT.send_message(channel, message)
-            
+
             if channels_told:
                 print('Told the following servers: ' + ', '.join(channels_told))
             else:
