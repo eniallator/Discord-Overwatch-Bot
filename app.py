@@ -17,13 +17,15 @@ if not TOKEN:
         if len(sys.argv) > 1:
             TOKEN = sys.argv[1]
         else:
-            raise Exception('Specify discord token either with a credentials.py file or as an argument.')
+            raise Exception(
+                'Specify discord token either with a credentials.py file or as an argument.')
 
 
 async def _find_log_message(channel, update_id):
     async for message in CLIENT.logs_from(channel, limit=100):
         if message.author.id == CLIENT.user.id and message.content.endswith(update_id):
             return True
+
 
 def _find_channels_to_tell(server_list):
     channel_list = []
@@ -33,17 +35,22 @@ def _find_channels_to_tell(server_list):
                 channel_list.append(channel)
     return channel_list
 
+
 def get_overwatch_role_id(server):
     return next((role.id for role in server.roles if str(role).lower() == 'overwatch'), 'NO_OVERWATCH_ROLE_DETECTED')
 
 
-OVERWATCH_URL = 'https://playoverwatch.com/en-us/game/patch-notes/pc/'
+OVERWATCH_URL = 'https://playoverwatch.com/en-gb/game/patch-notes/pc/'
+
 
 async def overwatch_news_timer():
     await CLIENT.wait_until_ready()
     while not CLIENT.is_closed:
         request = requests.get(OVERWATCH_URL)
-        match = re.search(r'<a\s*href="#([a-zA-Z\-0-9]*)"><h3\s*class="blog-sidebar-article-title">([a-zA-Z 0-9\.]*)</h3>', request.text)
+        match = re.search(
+            r'<li class="PatchNotesSideNav-listItem u-clearfix"><a href="#([a-zA-Z\-0-9]*)" class="u-float-left"><h3 class="h5">([a-zA-Z 0-9\.]*)</h3>',
+            request.text)
+
         if match:
             channel_list = _find_channels_to_tell(CLIENT.servers)
             channels_told = []
@@ -56,7 +63,9 @@ async def overwatch_news_timer():
                     mention_group = '<@&' + overwatch_role_id + '>'
 
                 if not update_in_logs:
-                    message = mention_group + ' ' + match.group(2) + ' now out! read the patch notes here:\n' + OVERWATCH_URL + '#' + match.group(1)
+                    message = mention_group + ' ' + \
+                        match.group(2) + ' now out! read the patch notes here:\n' + \
+                        OVERWATCH_URL + '#' + match.group(1)
                     channels_told.append(str(channel.server))
                     await CLIENT.send_message(channel, message)
 
