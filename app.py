@@ -48,7 +48,7 @@ async def overwatch_news_timer():
     while not CLIENT.is_closed:
         request = requests.get(OVERWATCH_URL)
         match = re.search(
-            r'<li class="PatchNotesSideNav-listItem u-clearfix"><a href="#([a-zA-Z\-0-9]*)" class="u-float-left"><h3 class="h5">([a-zA-Z 0-9\.]*)</h3>',
+            r'<li class="PatchNotesSideNav-listItem u-clearfix"><a class="u-float-left" href="#([a-zA-Z\-0-9]*)"><h3 class="h5">([a-zA-Z 0-9\.]*)</h3>',
             request.text)
 
         if match:
@@ -58,7 +58,7 @@ async def overwatch_news_timer():
                 update_in_logs = await _find_log_message(channel, match.group(1))
 
                 mention_group = '@everyone'
-                if not 'overwatch' in str(channel.server).lower():
+                if 'overwatch' not in str(channel.server).lower():
                     overwatch_role_id = get_overwatch_role_id(channel.server)
                     mention_group = '<@&' + overwatch_role_id + '>'
 
