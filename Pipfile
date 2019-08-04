@@ -7,8 +7,8 @@ verify_ssl = true
 pep8 = "*"
 
 [packages]
-requests = "==2.18.4"
 "discord.py" = "==0.16.11"
+requests = "*"
 
 [requires]
 python_version = "3.6"
