@@ -40,7 +40,7 @@ def get_overwatch_role_id(server):
     return next((role.id for role in server.roles if str(role).lower() == 'overwatch'), 'NO_OVERWATCH_ROLE_DETECTED')
 
 
-OVERWATCH_URL = 'https://playoverwatch.com/en-gb/game/patch-notes/pc/'
+OVERWATCH_URL = 'https://playoverwatch.com/en-gb/news/patch-notes/pc/'
 
 
 async def overwatch_news_timer():
